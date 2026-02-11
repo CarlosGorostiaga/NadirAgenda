@@ -1,0 +1,17 @@
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gestor-avisos-dev
+    volumes:
+      - .:/app:cached
+    working_dir: /app
+    command: bash -lc "sleep infinity"
+    ports:
+      - "4321:4321"
+    environment:
+      - NODE_ENV=development
+      - HOST=0.0.0.0
+      - PORT=4321
+      - CHOKIDAR_USEPOLLING=true

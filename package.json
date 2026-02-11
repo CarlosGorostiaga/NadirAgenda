@@ -1,0 +1,26 @@
+{
+  "name": "gestor-avisos",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.15.0",
+    "dexie": "^4.0.0",
+    "dexie-react-hooks": "^1.1.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "@astrojs/react": "^3.6.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.6.0",
+    "prettier": "^3.3.0",
+    "prettier-plugin-astro": "^0.14.0"
+  }
+}
