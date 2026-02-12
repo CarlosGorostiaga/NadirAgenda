@@ -12,6 +12,7 @@ import {
   Wrench,
   Clock,
   Save,
+  Repeat,
 } from 'lucide-react';
 
 interface FormularioAvisoProps {
@@ -34,6 +35,7 @@ export default function FormularioAviso({
     contactoAdmin: avisoEditar?.contactoAdmin || '',
     detalleTrabajoRealizado: avisoEditar?.detalleTrabajoRealizado || '',
     estado: avisoEditar?.estado || ('pendiente' as const),
+    mantenimiento: avisoEditar?.mantenimiento ?? false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -43,10 +45,26 @@ export default function FormularioAviso({
     setLoading(true);
 
     try {
+      const now = new Date();
+
+      // Guardar fechas solo cuando el estado se marca y aún no existe la fecha
+      const payload: Partial<Aviso> = {
+        ...formData,
+        fechaVisto:
+          formData.estado === 'visto'
+            ? (avisoEditar?.fechaVisto ?? now)
+            : (avisoEditar?.fechaVisto ?? null),
+        fechaPresupuestoAceptado:
+          formData.estado === 'presupuesto_aceptado'
+            ? (avisoEditar?.fechaPresupuestoAceptado ?? now)
+            : (avisoEditar?.fechaPresupuestoAceptado ?? null),
+      };
+
       if (avisoEditar?.id) {
-        await avisosDB.actualizar(avisoEditar.id, formData);
+        await avisosDB.actualizar(avisoEditar.id, payload);
       } else {
-        await avisosDB.crear(formData);
+        // crear espera Omit<Aviso, 'id' | 'fechaCreacion' | 'fechaActualizacion'>
+        await avisosDB.crear(payload as any);
       }
       onSuccess();
     } catch (error) {
@@ -130,7 +148,7 @@ export default function FormularioAviso({
                   {/* Nombre */}
                   <div className="md:col-span-2">
                     <label htmlFor="nombre" className={labelBase}>
-                      Nombre del cliente <span className="text-red-500">*</span>
+                      Nombre del cliente
                     </label>
                     <div className="relative">
                       <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -140,7 +158,6 @@ export default function FormularioAviso({
                         value={formData.nombre}
                         onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                         placeholder="Nombre completo"
-                        required
                         className={inputBase}
                       />
                     </div>
@@ -149,7 +166,7 @@ export default function FormularioAviso({
                   {/* Dirección */}
                   <div className="md:col-span-2">
                     <label htmlFor="direccion" className={labelBase}>
-                      Dirección <span className="text-red-500">*</span>
+                      Dirección
                     </label>
                     <div className="relative">
                       <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -159,7 +176,6 @@ export default function FormularioAviso({
                         value={formData.direccion}
                         onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                         placeholder="Calle, número, piso..."
-                        required
                         className={inputBase}
                       />
                     </div>
@@ -186,7 +202,7 @@ export default function FormularioAviso({
                   {/* Motivo */}
                   <div className="md:col-span-1">
                     <label htmlFor="motivo" className={labelBase}>
-                      Motivo del aviso <span className="text-red-500">*</span>
+                      Motivo del aviso
                     </label>
                     <div className="relative">
                       <FileEdit className="pointer-events-none absolute left-3 top-4 h-4 w-4 text-gray-400" />
@@ -196,7 +212,6 @@ export default function FormularioAviso({
                         onChange={(e) => setFormData({ ...formData, motivo: e.target.value })}
                         placeholder="Gotera, atasco, avería..."
                         rows={4}
-                        required
                         className={textareaBase}
                       />
                     </div>
@@ -218,7 +233,7 @@ export default function FormularioAviso({
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label htmlFor="administracion" className={labelBase}>
-                      Administración <span className="text-red-500">*</span>
+                      Administración
                     </label>
                     <div className="relative">
                       <Building2 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -233,7 +248,6 @@ export default function FormularioAviso({
                           })
                         }
                         placeholder="Nombre de la administración"
-                        required
                         className={inputBase}
                       />
                     </div>
@@ -241,7 +255,7 @@ export default function FormularioAviso({
 
                   <div>
                     <label htmlFor="contactoAdmin" className={labelBase}>
-                      Contacto <span className="text-red-500">*</span>
+                      Contacto
                     </label>
                     <div className="relative">
                       <UserCircle className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -256,7 +270,6 @@ export default function FormularioAviso({
                           })
                         }
                         placeholder="Persona que te pasó el aviso"
-                        required
                         className={inputBase}
                       />
                     </div>
@@ -285,6 +298,29 @@ export default function FormularioAviso({
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {/* Mantenimiento */}
+                  <div className="md:col-span-2">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={formData.mantenimiento}
+                        onChange={(e) =>
+                          setFormData({ ...formData, mantenimiento: e.target.checked })
+                        }
+                        className="mt-1 h-4 w-4"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                          <Repeat className="h-4 w-4 text-gray-600" />
+                          Mantenimiento
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Trabajo recurrente (hay que ir de vez en cuando).
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+
                   <div className="md:col-span-2">
                     <label htmlFor="detalleTrabajoRealizado" className={labelBase}>
                       Materiales y trabajo

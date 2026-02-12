@@ -19,7 +19,9 @@ import {
   Wrench,
   Calendar,
   Search,
-  SlidersHorizontal,
+  Settings,
+  Repeat,
+  X,
 } from 'lucide-react';
 
 export default function GestorAvisos() {
@@ -28,8 +30,10 @@ export default function GestorAvisos() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [avisoEditar, setAvisoEditar] = useState<Aviso | undefined>();
   const [filtroEstado, setFiltroEstado] = useState<'todos' | Aviso['estado']>('todos');
+  const [soloMantenimientos, setSoloMantenimientos] = useState(false);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [openSettings, setOpenSettings] = useState(false);
 
   useEffect(() => {
     cargarAvisos();
@@ -135,10 +139,14 @@ export default function GestorAvisos() {
   const filtradosBase =
     filtroEstado === 'todos' ? avisos : avisos.filter((a) => a.estado === filtroEstado);
 
+  const filtradosMantenimiento = soloMantenimientos
+    ? filtradosBase.filter((a) => !!a.mantenimiento)
+    : filtradosBase;
+
   const avisosFiltrados = (() => {
     const query = q.trim().toLowerCase();
-    if (!query) return filtradosBase;
-    return filtradosBase.filter((a) => {
+    if (!query) return filtradosMantenimiento;
+    return filtradosMantenimiento.filter((a) => {
       const hay =
         a.nombre?.toLowerCase().includes(query) ||
         a.direccion?.toLowerCase().includes(query) ||
@@ -158,6 +166,12 @@ export default function GestorAvisos() {
     { key: 'presupuesto_aceptado', label: 'Aceptados', icon: CheckCircle },
   ] as const;
 
+  const fmtDate = (d: any) => {
+    const date = d instanceof Date ? d : new Date(d);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
@@ -174,6 +188,16 @@ export default function GestorAvisos() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <button
+                onClick={() => setOpenSettings(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                title="Ajustes"
+                aria-label="Ajustes"
+              >
+                <Settings className="h-5 w-5" />
+                Ajustes
+              </button>
+
+              <button
                 onClick={handleNuevoAviso}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
@@ -183,10 +207,9 @@ export default function GestorAvisos() {
             </div>
           </div>
 
-          {/* Top row: Stats + Actions */}
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {/* Stats */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-black/5 lg:col-span-2">
+          {/* Top row: Stats */}
+          <div className="mt-6 grid grid-cols-1 gap-4">
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-black/5">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
@@ -204,44 +227,11 @@ export default function GestorAvisos() {
                 </div>
               </div>
             </div>
-
-            {/* Backup actions */}
-            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-black/5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gray-50 ring-1 ring-black/5">
-                    <SlidersHorizontal className="h-5 w-5 text-gray-700" />
-                  </span>
-                  Backup
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  onClick={handleExportarDatos}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
-                >
-                  <Download className="h-4 w-4" />
-                  Exportar
-                </button>
-
-                <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
-                  <Upload className="h-4 w-4" />
-                  Importar
-                  <input
-                    type="file"
-                    accept=".json"
-                    onChange={handleImportarDatos}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-            </div>
           </div>
 
           {/* Filters + Search */}
           <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ring-1 ring-black/5 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {pills.map((p) => {
                 const active = filtroEstado === (p.key as any);
                 const Icon = p.icon;
@@ -261,6 +251,21 @@ export default function GestorAvisos() {
                   </button>
                 );
               })}
+
+              {/* Toggle Mantenimiento */}
+              <button
+                onClick={() => setSoloMantenimientos((v) => !v)}
+                className={[
+                  'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition',
+                  soloMantenimientos
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+                ].join(' ')}
+                title="Filtrar solo mantenimientos"
+              >
+                <Repeat className="h-4 w-4" />
+                Mantenimientos
+              </button>
             </div>
 
             <div className="relative w-full md:max-w-sm">
@@ -295,7 +300,9 @@ export default function GestorAvisos() {
                   ? 'Prueba a cambiar la búsqueda.'
                   : filtroEstado !== 'todos'
                     ? `No hay avisos en estado "${filtroEstado}".`
-                    : 'Crea el primer aviso para empezar.'}
+                    : soloMantenimientos
+                      ? 'No hay avisos marcados como mantenimiento.'
+                      : 'Crea el primer aviso para empezar.'}
               </p>
               <button
                 onClick={handleNuevoAviso}
@@ -317,8 +324,9 @@ export default function GestorAvisos() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="truncate text-base font-semibold text-gray-900">
-                          {aviso.nombre}
+                          {aviso.nombre || '(Sin nombre)'}
                         </h3>
+
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           <span
                             className={[
@@ -330,13 +338,16 @@ export default function GestorAvisos() {
                             {badge.text}
                           </span>
 
+                          {aviso.mantenimiento && (
+                            <span className="inline-flex items-center gap-2 rounded-full bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700 ring-1 ring-purple-200">
+                              <Repeat className="h-3.5 w-3.5" />
+                              Mantenimiento
+                            </span>
+                          )}
+
                           <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
                             <Calendar className="h-3.5 w-3.5" />
-                            {new Date(aviso.fechaCreacion).toLocaleDateString('es-ES', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                            })}
+                            {fmtDate(aviso.fechaCreacion)}
                           </span>
                         </div>
                       </div>
@@ -363,10 +374,12 @@ export default function GestorAvisos() {
                     </div>
 
                     <div className="mt-4 space-y-3 text-sm">
-                      <div className="flex items-start gap-2">
-                        <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-                        <span className="text-gray-700">{aviso.direccion}</span>
-                      </div>
+                      {aviso.direccion && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="text-gray-700">{aviso.direccion}</span>
+                        </div>
+                      )}
 
                       {aviso.telefono && (
                         <div className="flex items-center gap-2">
@@ -375,17 +388,23 @@ export default function GestorAvisos() {
                         </div>
                       )}
 
-                      <div className="flex items-start gap-2">
-                        <FileEdit className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-                        <span className="text-gray-700 line-clamp-2">{aviso.motivo}</span>
-                      </div>
+                      {aviso.motivo && (
+                        <div className="flex items-start gap-2">
+                          <FileEdit className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="text-gray-700 line-clamp-2">{aviso.motivo}</span>
+                        </div>
+                      )}
 
-                      <div className="flex items-start gap-2">
-                        <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
-                        <span className="text-gray-700 line-clamp-2">
-                          {aviso.administracion} — {aviso.contactoAdmin}
-                        </span>
-                      </div>
+                      {(aviso.administracion || aviso.contactoAdmin) && (
+                        <div className="flex items-start gap-2">
+                          <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="text-gray-700 line-clamp-2">
+                            {aviso.administracion}
+                            {aviso.administracion && aviso.contactoAdmin ? ' — ' : ''}
+                            {aviso.contactoAdmin}
+                          </span>
+                        </div>
+                      )}
 
                       {aviso.detalleTrabajoRealizado && (
                         <div className="flex items-start gap-2">
@@ -393,6 +412,26 @@ export default function GestorAvisos() {
                           <span className="text-gray-700 line-clamp-2">
                             {aviso.detalleTrabajoRealizado}
                           </span>
+                        </div>
+                      )}
+
+                      {/* Fechas de estado */}
+                      {(aviso.fechaVisto || aviso.fechaPresupuestoAceptado) && (
+                        <div className="mt-2 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2 text-xs text-gray-600">
+                          {aviso.fechaVisto && (
+                            <div>
+                              👁️ Visto:{' '}
+                              <span className="font-semibold">{fmtDate(aviso.fechaVisto)}</span>
+                            </div>
+                          )}
+                          {aviso.fechaPresupuestoAceptado && (
+                            <div>
+                              ✅ Aceptado:{' '}
+                              <span className="font-semibold">
+                                {fmtDate(aviso.fechaPresupuestoAceptado)}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -434,6 +473,82 @@ export default function GestorAvisos() {
             }}
             avisoEditar={avisoEditar}
           />
+        )}
+
+        {/* Modal Ajustes (Backup) */}
+        {openSettings && (
+          <div className="fixed inset-0 z-50">
+            <button
+              type="button"
+              onClick={() => setOpenSettings(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              aria-label="Cerrar ajustes"
+            />
+            <div className="relative mx-auto mt-20 w-full max-w-md p-4">
+              <div className="overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+                <div className="flex items-start justify-between border-b border-gray-100 bg-white/80 px-5 py-4 backdrop-blur">
+                  <div>
+                    <p className="text-xs font-semibold tracking-wide text-gray-500">
+                      Configuración
+                    </p>
+                    <h3 className="text-lg font-semibold text-gray-900">Ajustes</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSettings(false)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
+                    aria-label="Cerrar"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4 p-5">
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
+                    <div className="text-sm font-semibold text-gray-900">Backup</div>
+                    <div className="mt-1 text-sm text-gray-600">
+                      Exporta o importa tus avisos (reemplaza los actuales al importar).
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={handleExportarDatos}
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                      >
+                        <Download className="h-4 w-4" />
+                        Exportar
+                      </button>
+
+                      <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        <Upload className="h-4 w-4" />
+                        Importar
+                        <input
+                          type="file"
+                          accept=".json"
+                          onChange={handleImportarDatos}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    Tip: guarda el backup en Drive/WhatsApp por si cambias de móvil/PC.
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 bg-white/80 px-5 py-4 backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={() => setOpenSettings(false)}
+                    className="inline-flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
