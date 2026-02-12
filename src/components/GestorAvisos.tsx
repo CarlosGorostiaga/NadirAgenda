@@ -18,6 +18,8 @@ import {
   Building2,
   Wrench,
   Calendar,
+  Search,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 export default function GestorAvisos() {
@@ -27,6 +29,7 @@ export default function GestorAvisos() {
   const [avisoEditar, setAvisoEditar] = useState<Aviso | undefined>();
   const [filtroEstado, setFiltroEstado] = useState<'todos' | Aviso['estado']>('todos');
   const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState('');
 
   useEffect(() => {
     cargarAvisos();
@@ -108,219 +111,316 @@ export default function GestorAvisos() {
     event.target.value = '';
   };
 
-  const avisosFiltrados =
-    filtroEstado === 'todos' ? avisos : avisos.filter((a) => a.estado === filtroEstado);
-
   const getEstadoBadge = (estado: Aviso['estado']) => {
     const badges = {
       pendiente: {
-        icon: <Clock className="w-4 h-4" />,
+        icon: <Clock className="h-3.5 w-3.5" />,
         text: 'Pendiente',
-        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        pill: 'bg-amber-50 text-amber-700 ring-amber-200',
       },
       visto: {
-        icon: <Eye className="w-4 h-4" />,
+        icon: <Eye className="h-3.5 w-3.5" />,
         text: 'Visto',
-        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        pill: 'bg-sky-50 text-sky-700 ring-sky-200',
       },
       presupuesto_aceptado: {
-        icon: <CheckCircle className="w-4 h-4" />,
-        text: 'Presup. Aceptado',
-        color: 'bg-green-100 text-green-800 border-green-200',
+        icon: <CheckCircle className="h-3.5 w-3.5" />,
+        text: 'Presup. aceptado',
+        pill: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
       },
-    };
+    } as const;
     return badges[estado];
   };
 
+  const filtradosBase =
+    filtroEstado === 'todos' ? avisos : avisos.filter((a) => a.estado === filtroEstado);
+
+  const avisosFiltrados = (() => {
+    const query = q.trim().toLowerCase();
+    if (!query) return filtradosBase;
+    return filtradosBase.filter((a) => {
+      const hay =
+        a.nombre?.toLowerCase().includes(query) ||
+        a.direccion?.toLowerCase().includes(query) ||
+        a.telefono?.toLowerCase().includes(query) ||
+        a.motivo?.toLowerCase().includes(query) ||
+        a.administracion?.toLowerCase().includes(query) ||
+        a.contactoAdmin?.toLowerCase().includes(query) ||
+        a.detalleTrabajoRealizado?.toLowerCase().includes(query);
+      return Boolean(hay);
+    });
+  })();
+
+  const pills = [
+    { key: 'todos', label: 'Todos', icon: FileText },
+    { key: 'pendiente', label: 'Pendientes', icon: Clock },
+    { key: 'visto', label: 'Vistos', icon: Eye },
+    { key: 'presupuesto_aceptado', label: 'Aceptados', icon: CheckCircle },
+  ] as const;
+
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white p-4 md:p-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <header className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestor de Avisos</h1>
-              <p className="text-gray-600">Gestiona tus avisos de trabajo fácilmente</p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold tracking-wide text-gray-500">Panel</p>
+              <h1 className="text-2xl font-semibold text-gray-900 md:text-3xl">Gestor de avisos</h1>
+              <p className="text-gray-600">
+                Organiza avisos, presupuesto y pendientes en un solo sitio.
+              </p>
             </div>
-            <button
-              onClick={handleNuevoAviso}
-              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
-            >
-              <PlusCircle className="w-5 h-5" />
-              Añadir Aviso
-            </button>
-          </div>
 
-          {/* Stats Card */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Bell className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-sm text-gray-600">Avisos pendientes</div>
-                <div className="text-3xl font-bold text-gray-900">{avisosPendientes}</div>
-              </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                onClick={handleNuevoAviso}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                <PlusCircle className="h-5 w-5" />
+                Añadir aviso
+              </button>
             </div>
           </div>
 
-          {/* Filtros */}
-          <div className="flex flex-wrap gap-2 mb-6">
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                filtroEstado === 'todos'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-              onClick={() => setFiltroEstado('todos')}
-            >
-              <FileText className="w-4 h-4" />
-              Todos
-            </button>
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                filtroEstado === 'pendiente'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-              onClick={() => setFiltroEstado('pendiente')}
-            >
-              <Clock className="w-4 h-4" />
-              Pendientes
-            </button>
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                filtroEstado === 'visto'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-              onClick={() => setFiltroEstado('visto')}
-            >
-              <Eye className="w-4 h-4" />
-              Vistos
-            </button>
-            <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                filtroEstado === 'presupuesto_aceptado'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              }`}
-              onClick={() => setFiltroEstado('presupuesto_aceptado')}
-            >
-              <CheckCircle className="w-4 h-4" />
-              Aceptados
-            </button>
+          {/* Top row: Stats + Actions */}
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {/* Stats */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-black/5 lg:col-span-2">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+                    <Bell className="h-6 w-6 text-blue-600" />
+                  </span>
+                  <div>
+                    <div className="text-sm text-gray-600">Avisos pendientes</div>
+                    <div className="text-3xl font-semibold text-gray-900">{avisosPendientes}</div>
+                  </div>
+                </div>
+
+                <div className="hidden text-right sm:block">
+                  <div className="text-xs font-medium text-gray-500">Total</div>
+                  <div className="text-lg font-semibold text-gray-900">{avisos.length}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Backup actions */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm ring-1 ring-black/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gray-50 ring-1 ring-black/5">
+                    <SlidersHorizontal className="h-5 w-5 text-gray-700" />
+                  </span>
+                  Backup
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={handleExportarDatos}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                >
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </button>
+
+                <label className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">
+                  <Upload className="h-4 w-4" />
+                  Importar
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportarDatos}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
           </div>
 
-          {/* Backup buttons */}
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={handleExportarDatos}
-              className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors border border-gray-200 shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              Exportar Backup
-            </button>
-            <label className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors border border-gray-200 shadow-sm cursor-pointer">
-              <Upload className="w-4 h-4" />
-              Importar Backup
-              <input type="file" accept=".json" onChange={handleImportarDatos} className="hidden" />
-            </label>
+          {/* Filters + Search */}
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm ring-1 ring-black/5 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {pills.map((p) => {
+                const active = filtroEstado === (p.key as any);
+                const Icon = p.icon;
+                return (
+                  <button
+                    key={p.key}
+                    onClick={() => setFiltroEstado(p.key as any)}
+                    className={[
+                      'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition',
+                      active
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50',
+                    ].join(' ')}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative w-full md:max-w-sm">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar por nombre, dirección, motivo…"
+                className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+              />
+            </div>
           </div>
         </header>
 
-        {/* Lista de Avisos */}
+        {/* Lista */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {loading ? (
-            <div className="col-span-full flex items-center justify-center py-12">
-              <div className="text-gray-500">Cargando...</div>
+            <div className="col-span-full flex items-center justify-center py-16">
+              <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5">
+                <span className="inline-flex h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-transparent" />
+                Cargando…
+              </div>
             </div>
           ) : avisosFiltrados.length === 0 ? (
-            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-              <FileText className="w-16 h-16 text-gray-300 mb-4" />
-              <p className="text-gray-500">
-                No hay avisos {filtroEstado !== 'todos' && `en estado "${filtroEstado}"`}
+            <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-gray-100 bg-white py-16 text-center shadow-sm ring-1 ring-black/5">
+              <div className="mb-3 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 ring-1 ring-black/5">
+                <FileText className="h-7 w-7 text-gray-400" />
+              </div>
+              <p className="text-sm font-semibold text-gray-900">No hay avisos</p>
+              <p className="mt-1 text-sm text-gray-600">
+                {q.trim()
+                  ? 'Prueba a cambiar la búsqueda.'
+                  : filtroEstado !== 'todos'
+                    ? `No hay avisos en estado "${filtroEstado}".`
+                    : 'Crea el primer aviso para empezar.'}
               </p>
+              <button
+                onClick={handleNuevoAviso}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                <PlusCircle className="h-5 w-5" />
+                Añadir aviso
+              </button>
             </div>
           ) : (
-            avisosFiltrados.map((aviso) => (
-              <div
-                key={aviso.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow border border-gray-200 overflow-hidden"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-bold text-gray-900">{aviso.nombre}</h3>
-                    <span
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getEstadoBadge(aviso.estado).color}`}
+            avisosFiltrados.map((aviso) => {
+              const badge = getEstadoBadge(aviso.estado);
+              return (
+                <article
+                  key={aviso.id}
+                  className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm ring-1 ring-black/5 transition hover:shadow-md"
+                >
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold text-gray-900">
+                          {aviso.nombre}
+                        </h3>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span
+                            className={[
+                              'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1',
+                              badge.pill,
+                            ].join(' ')}
+                          >
+                            {badge.icon}
+                            {badge.text}
+                          </span>
+
+                          <span className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs font-semibold text-gray-700 ring-1 ring-gray-200">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {new Date(aviso.fechaCreacion).toLocaleDateString('es-ES', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
+                        <button
+                          onClick={() => handleEditarAviso(aviso)}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-50"
+                          title="Editar"
+                          aria-label="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+
+                        <button
+                          onClick={() => aviso.id && handleEliminarAviso(aviso.id)}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 shadow-sm transition hover:bg-red-50"
+                          title="Eliminar"
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-3 text-sm">
+                      <div className="flex items-start gap-2">
+                        <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <span className="text-gray-700">{aviso.direccion}</span>
+                      </div>
+
+                      {aviso.telefono && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="text-gray-700">{aviso.telefono}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-2">
+                        <FileEdit className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <span className="text-gray-700 line-clamp-2">{aviso.motivo}</span>
+                      </div>
+
+                      <div className="flex items-start gap-2">
+                        <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                        <span className="text-gray-700 line-clamp-2">
+                          {aviso.administracion} — {aviso.contactoAdmin}
+                        </span>
+                      </div>
+
+                      {aviso.detalleTrabajoRealizado && (
+                        <div className="flex items-start gap-2">
+                          <Wrench className="mt-0.5 h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <span className="text-gray-700 line-clamp-2">
+                            {aviso.detalleTrabajoRealizado}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Footer actions */}
+                  <div className="flex gap-2 border-t border-gray-100 bg-gray-50/60 p-4">
+                    <button
+                      onClick={() => handleEditarAviso(aviso)}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                      title="Editar"
                     >
-                      {getEstadoBadge(aviso.estado).icon}
-                      {getEstadoBadge(aviso.estado).text}
-                    </span>
+                      <Edit className="h-4 w-4" />
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() => aviso.id && handleEliminarAviso(aviso.id)}
+                      className="inline-flex items-center justify-center rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50"
+                      title="Eliminar"
+                      aria-label="Eliminar"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{aviso.direccion}</span>
-                    </div>
-
-                    {aviso.telefono && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-700">{aviso.telefono}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-start gap-2 text-sm">
-                      <FileEdit className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{aviso.motivo}</span>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-sm">
-                      <Building2 className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        {aviso.administracion} - {aviso.contactoAdmin}
-                      </span>
-                    </div>
-
-                    {aviso.detalleTrabajoRealizado && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <Wrench className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">{aviso.detalleTrabajoRealizado}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-xs text-gray-500 pt-2 border-t border-gray-100">
-                      <Calendar className="w-4 h-4" />
-                      {new Date(aviso.fechaCreacion).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 p-4 bg-gray-50 border-t border-gray-100">
-                  <button
-                    onClick={() => handleEditarAviso(aviso)}
-                    className="flex items-center justify-center gap-2 flex-1 bg-white hover:bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-medium transition-colors border border-blue-200"
-                    title="Editar"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => aviso.id && handleEliminarAviso(aviso.id)}
-                    className="flex items-center justify-center gap-2 bg-white hover:bg-red-50 text-red-600 px-4 py-2 rounded-lg font-medium transition-colors border border-red-200"
-                    title="Eliminar"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))
+                </article>
+              );
+            })
           )}
         </div>
 
