@@ -1,5 +1,19 @@
 import { useState, type FormEvent } from 'react';
 import { avisosDB, type Aviso } from '../lib/db';
+import {
+  X,
+  User,
+  MapPin,
+  Phone,
+  FileEdit,
+  Building2,
+  UserCircle,
+  Package,
+  Wrench,
+  Clock,
+  Eye,
+  CheckCircle,
+} from 'lucide-react';
 
 interface FormularioAvisoProps {
   onSuccess: () => void;
@@ -7,7 +21,11 @@ interface FormularioAvisoProps {
   avisoEditar?: Aviso;
 }
 
-export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: FormularioAvisoProps) {
+export default function FormularioAviso({
+  onSuccess,
+  onCancel,
+  avisoEditar,
+}: FormularioAvisoProps) {
   const [formData, setFormData] = useState({
     nombre: avisoEditar?.nombre || '',
     direccion: avisoEditar?.direccion || '',
@@ -16,7 +34,7 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
     administracion: avisoEditar?.administracion || '',
     contactoAdmin: avisoEditar?.contactoAdmin || '',
     detalleTrabajoRealizado: avisoEditar?.detalleTrabajoRealizado || '',
-    estado: avisoEditar?.estado || ('pendiente' as const)
+    estado: avisoEditar?.estado || ('pendiente' as const),
   });
 
   const [loading, setLoading] = useState(false);
@@ -46,18 +64,21 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
         <div className="modal-header">
           <h2>{avisoEditar ? 'Editar Aviso' : 'Añadir Aviso'}</h2>
           <button onClick={onCancel} className="btn-close" aria-label="Cerrar">
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="form">
           {/* Datos del Cliente */}
           <div className="form-section">
-            <h3>📋 Datos del Cliente</h3>
-            
+            <h3>
+              <FileEdit className="w-5 h-5" />
+              Datos del Cliente
+            </h3>
+
             <div className="form-group">
               <label htmlFor="nombre">
-                <span className="icon">👤</span>
+                <User className="w-4 h-4 icon" />
                 Nombre del cliente *
               </label>
               <input
@@ -72,7 +93,7 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
             <div className="form-group">
               <label htmlFor="direccion">
-                <span className="icon">📍</span>
+                <MapPin className="w-4 h-4 icon" />
                 Dirección *
               </label>
               <input
@@ -87,7 +108,7 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
             <div className="form-group">
               <label htmlFor="telefono">
-                <span className="icon">📞</span>
+                <Phone className="w-4 h-4 icon" />
                 Teléfono
               </label>
               <input
@@ -101,7 +122,7 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
             <div className="form-group">
               <label htmlFor="motivo">
-                <span className="icon">📝</span>
+                <FileEdit className="w-4 h-4 icon" />
                 Motivo del aviso *
               </label>
               <textarea
@@ -117,11 +138,14 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
           {/* Datos de la Administración */}
           <div className="form-section">
-            <h3>🏢 Administración</h3>
-            
+            <h3>
+              <Building2 className="w-5 h-5" />
+              Administración
+            </h3>
+
             <div className="form-group">
               <label htmlFor="administracion">
-                <span className="icon">🏛️</span>
+                <Building2 className="w-4 h-4 icon" />
                 Administración *
               </label>
               <input
@@ -136,7 +160,7 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
             <div className="form-group">
               <label htmlFor="contactoAdmin">
-                <span className="icon">👔</span>
+                <UserCircle className="w-4 h-4 icon" />
                 Contacto en administración *
               </label>
               <input
@@ -152,17 +176,22 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
           {/* Detalle del Trabajo */}
           <div className="form-section">
-            <h3>🔧 Trabajo Realizado</h3>
-            
+            <h3>
+              <Wrench className="w-5 h-5" />
+              Trabajo Realizado
+            </h3>
+
             <div className="form-group">
               <label htmlFor="detalleTrabajoRealizado">
-                <span className="icon">📦</span>
+                <Package className="w-4 h-4 icon" />
                 Materiales y trabajo
               </label>
               <textarea
                 id="detalleTrabajoRealizado"
                 value={formData.detalleTrabajoRealizado}
-                onChange={(e) => setFormData({ ...formData, detalleTrabajoRealizado: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, detalleTrabajoRealizado: e.target.value })
+                }
                 placeholder="3 metros de canaló, poliuretano, caucho..."
                 rows={4}
               />
@@ -170,17 +199,19 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
 
             <div className="form-group">
               <label htmlFor="estado">
-                <span className="icon">⚡</span>
+                <Clock className="w-4 h-4 icon" />
                 Estado
               </label>
               <select
                 id="estado"
                 value={formData.estado}
-                onChange={(e) => setFormData({ ...formData, estado: e.target.value as Aviso['estado'] })}
+                onChange={(e) =>
+                  setFormData({ ...formData, estado: e.target.value as Aviso['estado'] })
+                }
               >
-                <option value="pendiente">⏳ Pendiente</option>
-                <option value="visto">👀 Visto</option>
-                <option value="presupuesto_aceptado">✅ Presupuesto Aceptado</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="visto">Visto</option>
+                <option value="presupuesto_aceptado">Presupuesto Aceptado</option>
               </select>
             </div>
           </div>
@@ -190,7 +221,7 @@ export default function FormularioAviso({ onSuccess, onCancel, avisoEditar }: Fo
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Guardando...' : (avisoEditar ? 'Actualizar' : 'Guardar')}
+              {loading ? 'Guardando...' : avisoEditar ? 'Actualizar' : 'Guardar'}
             </button>
           </div>
         </form>

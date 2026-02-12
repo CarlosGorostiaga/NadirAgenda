@@ -1,12 +1,12 @@
 {
-  "name": "Gestor de Avisos",
-  "short_name": "Avisos",
+  "name": "Gestor de Avisos - Nadir",
+  "short_name": "Avisos Nadir",
   "description": "Gestiona tus avisos de trabajo fácilmente",
   "id": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#5b5fff",
+  "theme_color": "#1e40af",
   "orientation": "portrait",
   "icons": [
     {

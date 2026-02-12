@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react';
 import { avisosDB, type Aviso } from '../lib/db';
 import FormularioAviso from './FormularioAviso';
+import {
+  FileText,
+  PlusCircle,
+  Search,
+  Download,
+  Upload,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Eye,
+  Clock,
+  Bell,
+  MapPin,
+  Phone,
+  FileEdit,
+  Building2,
+  Wrench,
+  Calendar,
+} from 'lucide-react';
 
 export default function GestorAvisos() {
   const [avisos, setAvisos] = useState<Aviso[]>([]);
@@ -76,7 +95,7 @@ export default function GestorAvisos() {
     try {
       const text = await file.text();
       const datos = JSON.parse(text);
-      
+
       if (confirm('⚠️ Esto reemplazará todos los avisos actuales. ¿Continuar?')) {
         await avisosDB.importarDatos(datos);
         await cargarAvisos();
@@ -86,20 +105,31 @@ export default function GestorAvisos() {
       console.error('Error al importar:', error);
       alert('Error al importar los datos. Verifica que el archivo sea válido.');
     }
-    
+
     // Reset input
     event.target.value = '';
   };
 
-  const avisosFiltrados = filtroEstado === 'todos' 
-    ? avisos 
-    : avisos.filter(a => a.estado === filtroEstado);
+  const avisosFiltrados =
+    filtroEstado === 'todos' ? avisos : avisos.filter((a) => a.estado === filtroEstado);
 
   const getEstadoBadge = (estado: Aviso['estado']) => {
     const badges = {
-      pendiente: { emoji: '⏳', text: 'Pendiente', class: 'badge-pendiente' },
-      visto: { emoji: '👀', text: 'Visto', class: 'badge-visto' },
-      presupuesto_aceptado: { emoji: '✅', text: 'Presup. Aceptado', class: 'badge-aceptado' }
+      pendiente: {
+        icon: <Clock className="w-4 h-4" />,
+        text: 'Pendiente',
+        class: 'badge-pendiente',
+      },
+      visto: {
+        icon: <Eye className="w-4 h-4" />,
+        text: 'Visto',
+        class: 'badge-visto',
+      },
+      presupuesto_aceptado: {
+        icon: <CheckCircle className="w-4 h-4" />,
+        text: 'Presup. Aceptado',
+        class: 'badge-aceptado',
+      },
     };
     return badges[estado];
   };
@@ -114,14 +144,14 @@ export default function GestorAvisos() {
             <p>Gestiona tus avisos fácilmente</p>
           </div>
           <button onClick={handleNuevoAviso} className="btn btn-add">
-            <span className="btn-icon">➕</span>
+            <PlusCircle className="w-5 h-5" />
             Añadir Aviso
           </button>
         </div>
 
         <div className="stats-card">
           <div className="stat">
-            <span className="stat-icon">🔔</span>
+            <Bell className="w-6 h-6 stat-icon" />
             <div>
               <div className="stat-label">Avisos pendientes</div>
               <div className="stat-value">{avisosPendientes}</div>
@@ -131,42 +161,48 @@ export default function GestorAvisos() {
 
         {/* Filtros */}
         <div className="filters">
-          <button 
+          <button
             className={`filter-btn ${filtroEstado === 'todos' ? 'active' : ''}`}
             onClick={() => setFiltroEstado('todos')}
           >
-            📋 Todos
+            <FileText className="w-4 h-4" />
+            Todos
           </button>
-          <button 
+          <button
             className={`filter-btn ${filtroEstado === 'pendiente' ? 'active' : ''}`}
             onClick={() => setFiltroEstado('pendiente')}
           >
-            ⏳ Pendientes
+            <Clock className="w-4 h-4" />
+            Pendientes
           </button>
-          <button 
+          <button
             className={`filter-btn ${filtroEstado === 'visto' ? 'active' : ''}`}
             onClick={() => setFiltroEstado('visto')}
           >
-            👀 Vistos
+            <Eye className="w-4 h-4" />
+            Vistos
           </button>
-          <button 
+          <button
             className={`filter-btn ${filtroEstado === 'presupuesto_aceptado' ? 'active' : ''}`}
             onClick={() => setFiltroEstado('presupuesto_aceptado')}
           >
-            ✅ Aceptados
+            <CheckCircle className="w-4 h-4" />
+            Aceptados
           </button>
         </div>
 
         {/* Backup buttons */}
         <div className="backup-section">
           <button onClick={handleExportarDatos} className="btn btn-backup">
-            💾 Exportar Backup
+            <Download className="w-4 h-4" />
+            Exportar Backup
           </button>
           <label className="btn btn-backup">
-            📥 Importar Backup
-            <input 
-              type="file" 
-              accept=".json" 
+            <Upload className="w-4 h-4" />
+            Importar Backup
+            <input
+              type="file"
+              accept=".json"
               onChange={handleImportarDatos}
               style={{ display: 'none' }}
             />
@@ -182,7 +218,7 @@ export default function GestorAvisos() {
           </div>
         ) : avisosFiltrados.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">📭</span>
+            <FileText className="w-16 h-16 empty-icon" />
             <p>No hay avisos {filtroEstado !== 'todos' && `en estado "${filtroEstado}"`}</p>
           </div>
         ) : (
@@ -191,30 +227,31 @@ export default function GestorAvisos() {
               <div className="aviso-header">
                 <h3>{aviso.nombre}</h3>
                 <span className={`badge ${getEstadoBadge(aviso.estado).class}`}>
-                  {getEstadoBadge(aviso.estado).emoji} {getEstadoBadge(aviso.estado).text}
+                  {getEstadoBadge(aviso.estado).icon}
+                  {getEstadoBadge(aviso.estado).text}
                 </span>
               </div>
 
               <div className="aviso-body">
                 <div className="aviso-field">
-                  <span className="field-icon">📍</span>
+                  <MapPin className="w-4 h-4 field-icon" />
                   <span className="field-value">{aviso.direccion}</span>
                 </div>
-                
+
                 {aviso.telefono && (
                   <div className="aviso-field">
-                    <span className="field-icon">📞</span>
+                    <Phone className="w-4 h-4 field-icon" />
                     <span className="field-value">{aviso.telefono}</span>
                   </div>
                 )}
 
                 <div className="aviso-field">
-                  <span className="field-icon">📝</span>
+                  <FileEdit className="w-4 h-4 field-icon" />
                   <span className="field-value">{aviso.motivo}</span>
                 </div>
 
                 <div className="aviso-field">
-                  <span className="field-icon">🏛️</span>
+                  <Building2 className="w-4 h-4 field-icon" />
                   <span className="field-value">
                     {aviso.administracion} - {aviso.contactoAdmin}
                   </span>
@@ -222,34 +259,35 @@ export default function GestorAvisos() {
 
                 {aviso.detalleTrabajoRealizado && (
                   <div className="aviso-field">
-                    <span className="field-icon">🔧</span>
+                    <Wrench className="w-4 h-4 field-icon" />
                     <span className="field-value">{aviso.detalleTrabajoRealizado}</span>
                   </div>
                 )}
 
                 <div className="aviso-date">
-                  📅 {new Date(aviso.fechaCreacion).toLocaleDateString('es-ES', {
+                  <Calendar className="w-4 h-4" />
+                  {new Date(aviso.fechaCreacion).toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
-                    year: 'numeric'
+                    year: 'numeric',
                   })}
                 </div>
               </div>
 
               <div className="aviso-actions">
-                <button 
+                <button
                   onClick={() => handleEditarAviso(aviso)}
                   className="btn-icon-action"
                   title="Editar"
                 >
-                  ✏️
+                  <Edit className="w-4 h-4" />
                 </button>
-                <button 
+                <button
                   onClick={() => aviso.id && handleEliminarAviso(aviso.id)}
                   className="btn-icon-action btn-danger"
                   title="Eliminar"
                 >
-                  🗑️
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
