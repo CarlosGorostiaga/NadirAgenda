@@ -47,6 +47,7 @@ Aplicación web progresiva (PWA) para gestionar avisos de trabajos de fontanerí
 ## 📦 Deploy
 
 Build de producción:
+
 ```bash
 npm run build
 ```
@@ -55,4 +56,5 @@ Deploy en Netlify/Vercel/Cloudflare Pages (GRATIS)
 
 ---
 
-Desarrollado por Carlos GP para Héctor Sansé 🚀
+Desarrollado por Carlos GP para Héctor Sansé
+npm run dev -- --host 0.0.0.0 --port 4321
