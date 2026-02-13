@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { avisosDB, type Aviso } from '../lib/db';
 import FormularioAviso from './FormularioAviso';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/apiClient';
 import {
   FileText,
   PlusCircle,
@@ -136,17 +136,12 @@ export default function GestorAvisos() {
   };
 
   // ✅ NUEVO: logout desde Ajustes
-  const handleLogout = async () => {
+  const handleLogout = () => {
     const ok = confirm('¿Quieres cerrar sesión?');
     if (!ok) return;
 
-    try {
-      await supabase.auth.signOut();
-      window.location.reload(); // AppGate detectará logged_out y mostrará Login
-    } catch (err) {
-      console.error(err);
-      alert('Error al cerrar sesión');
-    }
+    apiClient.logout();
+    window.location.href = '/';
   };
 
   const getEstadoBadge = (estado: Aviso['estado']) => {

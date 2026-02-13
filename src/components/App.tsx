@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/apiClient';
 import Login from './Login';
 import GestorAvisos from './GestorAvisos';
 
@@ -15,24 +15,6 @@ function daysLeft(accessUntil: Date) {
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
 }
 
-// ✅ Importante: Supabase devuelve "thenables" (PostgrestBuilder), no siempre Promise.
-// Aceptamos PromiseLike y lo "promisificamos" con Promise.resolve.
-function withTimeout<T>(p: PromiseLike<T>, ms: number, label = 'timeout'): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(label)), ms);
-
-    Promise.resolve(p)
-      .then((v) => {
-        clearTimeout(t);
-        resolve(v);
-      })
-      .catch((e) => {
-        clearTimeout(t);
-        reject(e);
-      });
-  });
-}
-
 export default function App() {
   const [state, setState] = useState<AccessState>({ status: 'loading' });
 
@@ -40,30 +22,22 @@ export default function App() {
     setState({ status: 'loading' });
 
     try {
-      // 1) sesión (con timeout)
-      const sessionData = await withTimeout(supabase.auth.getSession(), 6000, 'session timeout');
-      const user = sessionData.data.session?.user;
-
-      if (!user) {
+      // Verificar si está autenticado
+      if (!apiClient.isAuthenticated()) {
         setState({ status: 'logged_out' });
         return;
       }
 
-      // 2) acceso (con timeout)
-      const res = await withTimeout(
-        supabase.from('user_access').select('access_until').eq('user_id', user.id).single(),
-        6000,
-        'access timeout'
-      );
+      // Obtener acceso del usuario
+      const access = await apiClient.getAccess();
 
-      // res ya NO es unknown aquí
-      if (res.error || !res.data?.access_until) {
+      if (!access) {
         setState({ status: 'blocked', accessUntil: null });
         return;
       }
 
-      const accessUntil = new Date(res.data.access_until);
-      const allowed = accessUntil.getTime() > Date.now();
+      const accessUntil = new Date(access.access_until);
+      const allowed = access.has_access;
 
       setState(allowed ? { status: 'allowed', accessUntil } : { status: 'blocked', accessUntil });
     } catch (e: any) {
@@ -74,12 +48,6 @@ export default function App() {
 
   useEffect(() => {
     load();
-
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      load();
-    });
-
-    return () => sub.subscription.unsubscribe();
   }, []);
 
   const banner = useMemo(() => {
@@ -102,12 +70,8 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-900 shadow-sm ring-1 ring-black/5">
-          <h2 className="text-lg font-semibold">Error conectando con Supabase</h2>
-          <p className="mt-2 text-sm opacity-90">
-            {state.message.includes('AbortError')
-              ? 'Parece un bloqueo/abort del navegador o del Service Worker (PWA).'
-              : state.message}
-          </p>
+          <h2 className="text-lg font-semibold">Error al conectar</h2>
+          <p className="mt-2 text-sm opacity-90">{state.message}</p>
 
           <div className="mt-5 flex flex-col gap-2">
             <button
@@ -118,8 +82,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={async () => {
-                await supabase.auth.signOut();
+              onClick={() => {
+                apiClient.logout();
                 setState({ status: 'logged_out' });
               }}
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
@@ -152,8 +116,8 @@ export default function App() {
             </button>
 
             <button
-              onClick={async () => {
-                await supabase.auth.signOut();
+              onClick={() => {
+                apiClient.logout();
                 setState({ status: 'logged_out' });
               }}
               className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"

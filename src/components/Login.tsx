@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { apiClient } from '../lib/apiClient';
 import { Eye, EyeOff, Lock, Mail, LogIn, UserPlus } from 'lucide-react';
 
 type Mode = 'login' | 'register';
@@ -29,37 +29,20 @@ export default function Login() {
 
     try {
       if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-        if (error) throw error;
-
-        // AppGate escuchará el cambio de sesión
+        await apiClient.login(email.trim(), password);
         setMsg({ type: 'ok', text: '¡Dentro! Cargando…' });
+
+        setTimeout(() => window.location.reload(), 500);
         return;
       }
 
-      // register
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-      });
-      if (error) throw error;
+      await apiClient.register(email.trim(), password);
+      setMsg({ type: 'ok', text: 'Cuenta creada. Redirigiendo...' });
 
-      setMsg({ type: 'ok', text: 'Cuenta creada. Ya puedes entrar.' });
-      setMode('login');
+      setTimeout(() => window.location.reload(), 500);
     } catch (e: any) {
-      const raw = String(e?.message ?? 'Error');
-      const pretty = raw.includes('Invalid login credentials')
-        ? 'Email o contraseña incorrectos.'
-        : raw.includes('Password should be at least')
-          ? 'La contraseña debe tener al menos 6 caracteres.'
-          : raw.includes('User already registered')
-            ? 'Ese email ya está registrado. Prueba a entrar.'
-            : raw;
-
-      setMsg({ type: 'error', text: pretty });
+      const errorMsg = e.message || 'Error desconocido';
+      setMsg({ type: 'error', text: errorMsg });
     } finally {
       setLoading(false);
     }
@@ -67,14 +50,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4">
-      {/* Fondo suave (sin pasarse) */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50" />
       <div className="pointer-events-none absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,0.18),transparent_45%),radial-gradient(circle_at_80%_20%,rgba(99,102,241,0.14),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(168,85,247,0.12),transparent_55%)]" />
 
       <div className="relative w-full max-w-md">
-        {/* Card */}
         <div className="overflow-hidden rounded-2xl bg-white/85 backdrop-blur border border-white/60 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
-          {/* Top */}
           <div className="p-6 border-b border-gray-100 bg-white/70 backdrop-blur">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -84,7 +64,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-gray-50 p-1 ring-1 ring-gray-200">
               <button
                 type="button"
@@ -125,9 +104,7 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Form */}
           <div className="p-6 space-y-4">
-            {/* Msg */}
             {msg && (
               <div
                 className={[
@@ -141,7 +118,6 @@ export default function Login() {
               </div>
             )}
 
-            {/* Email */}
             <div>
               <label className="mb-2 block text-sm font-semibold text-gray-700">Email</label>
               <div className="relative">
@@ -149,7 +125,7 @@ export default function Login() {
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  inputMode="email"
+                  type="email"
                   autoComplete="email"
                   placeholder="tuemail@correo.com"
                   className="w-full rounded-xl border border-gray-200 bg-white px-10 py-3 text-sm text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
@@ -157,7 +133,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label className="mb-2 block text-sm font-semibold text-gray-700">Contraseña</label>
               <div className="relative">
@@ -175,7 +150,6 @@ export default function Login() {
                   onClick={() => setShowPass((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-900"
                   aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                  title={showPass ? 'Ocultar' : 'Mostrar'}
                 >
                   {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -188,7 +162,6 @@ export default function Login() {
               )}
             </div>
 
-            {/* Submit */}
             <button
               type="button"
               onClick={handle}
@@ -213,14 +186,12 @@ export default function Login() {
               )}
             </button>
 
-            {/* Footer hint */}
             <div className="pt-2 text-center text-xs text-gray-500">
-              Consejo: usa un email real para no perder el acceso cuando metamos pagos.
+              Consejo: usa un email real para no perder el acceso.
             </div>
           </div>
         </div>
 
-        {/* Micro footer */}
         <div className="mt-4 text-center text-xs text-gray-500">
           © {new Date().getFullYear()} Carlosgorostiaga.dev · Gestor de avisos
         </div>
