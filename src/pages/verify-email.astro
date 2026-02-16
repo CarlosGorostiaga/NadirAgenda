@@ -1,0 +1,96 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Verificando email - Gestor de Avisos">
+  <div id="verify-container"></div>
+</Layout>
+
+<script>
+  import { apiClient } from '../lib/apiClient';
+
+  const container = document.getElementById('verify-container');
+
+  // Obtener token de la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+
+  async function verify() {
+    if (!container) return;
+
+    // Loading state
+    container.innerHTML = `
+      <div class="min-h-screen flex items-center justify-center p-6">
+        <div class="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
+          <div class="inline-flex h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+          <h2 class="mt-4 text-xl font-semibold text-gray-900">Verificando tu email...</h2>
+          <p class="mt-2 text-sm text-gray-600">Por favor espera un momento</p>
+        </div>
+      </div>
+    `;
+
+    if (!token) {
+      container.innerHTML = `
+        <div class="min-h-screen flex items-center justify-center p-6">
+          <div class="w-full max-w-md rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center shadow-sm ring-1 ring-black/5">
+            <div class="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+              <svg class="h-8 w-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 class="mt-4 text-xl font-semibold text-gray-900">Token inválido</h2>
+            <p class="mt-2 text-sm text-gray-600">El enlace de verificación no es válido</p>
+            <a href="/" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+              Volver al inicio
+            </a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      await apiClient.verifyEmail(token);
+
+      // Success
+      container.innerHTML = `
+        <div class="min-h-screen flex items-center justify-center p-6">
+          <div class="w-full max-w-md rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center shadow-sm ring-1 ring-black/5">
+            <div class="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <svg class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 class="mt-4 text-xl font-semibold text-gray-900">¡Email verificado!</h2>
+            <p class="mt-2 text-sm text-gray-600">Tu cuenta ha sido activada correctamente. Redirigiendo...</p>
+          </div>
+        </div>
+      `;
+
+      // Redirigir después de 2 segundos
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 2000);
+    } catch (error: any) {
+      // Error
+      container.innerHTML = `
+        <div class="min-h-screen flex items-center justify-center p-6">
+          <div class="w-full max-w-md rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center shadow-sm ring-1 ring-black/5">
+            <div class="mx-auto inline-flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+              <svg class="h-8 w-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 class="mt-4 text-xl font-semibold text-gray-900">Error al verificar</h2>
+            <p class="mt-2 text-sm text-gray-600">${error.message || 'Token inválido o expirado'}</p>
+            <a href="/" class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+              Volver al inicio
+            </a>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  verify();
+</script>

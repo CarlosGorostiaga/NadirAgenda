@@ -10,14 +10,16 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState<{ type: 'error' | 'ok'; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ type: 'error' | 'ok' | 'warning'; text: string } | null>(null);
+  const [showResendBtn, setShowResendBtn] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
 
   const title = useMemo(() => (mode === 'login' ? 'Accede a tu panel' : 'Crea tu cuenta'), [mode]);
   const subtitle = useMemo(
     () =>
       mode === 'login'
         ? 'Entra con tu email y contraseña.'
-        : 'Tendrás 30 días gratis automáticamente al registrarte.',
+        : 'Recibirás un email de verificación al registrarte.',
     [mode]
   );
 
@@ -25,6 +27,7 @@ export default function Login() {
 
   const handle = async () => {
     setMsg(null);
+    setShowResendBtn(false);
     setLoading(true);
 
     try {
@@ -36,15 +39,51 @@ export default function Login() {
         return;
       }
 
+      // Register
       await apiClient.register(email.trim(), password);
-      setMsg({ type: 'ok', text: 'Cuenta creada. Redirigiendo...' });
+      setMsg({
+        type: 'ok',
+        text: '✅ Cuenta creada. Revisa tu email para verificar tu cuenta y poder entrar.',
+      });
 
-      setTimeout(() => window.location.reload(), 500);
+      // Cambiar a modo login después de 3 segundos
+      setTimeout(() => {
+        setMode('login');
+        setMsg(null);
+      }, 5000);
     } catch (e: any) {
       const errorMsg = e.message || 'Error desconocido';
-      setMsg({ type: 'error', text: errorMsg });
+
+      // Si el error es de email no verificado
+      if (errorMsg.includes('Email no verificado') || errorMsg.includes('no verificado')) {
+        setMsg({
+          type: 'warning',
+          text: '⚠️ Tu email aún no está verificado. Revisa tu bandeja de entrada.',
+        });
+        setShowResendBtn(true);
+      } else {
+        setMsg({ type: 'error', text: errorMsg });
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    setResendingEmail(true);
+    setMsg(null);
+
+    try {
+      await apiClient.resendVerification(email.trim());
+      setMsg({
+        type: 'ok',
+        text: '✅ Email reenviado. Revisa tu bandeja de entrada (y spam).',
+      });
+      setShowResendBtn(false);
+    } catch (e: any) {
+      setMsg({ type: 'error', text: e.message || 'Error al reenviar email' });
+    } finally {
+      setResendingEmail(false);
     }
   };
 
@@ -70,6 +109,7 @@ export default function Login() {
                 onClick={() => {
                   setMode('login');
                   setMsg(null);
+                  setShowResendBtn(false);
                 }}
                 className={[
                   'rounded-xl px-3 py-2 text-sm font-semibold transition',
@@ -88,6 +128,7 @@ export default function Login() {
                 onClick={() => {
                   setMode('register');
                   setMsg(null);
+                  setShowResendBtn(false);
                 }}
                 className={[
                   'rounded-xl px-3 py-2 text-sm font-semibold transition',
@@ -111,11 +152,24 @@ export default function Login() {
                   'rounded-2xl border px-4 py-3 text-sm font-semibold',
                   msg.type === 'ok'
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                    : 'border-rose-200 bg-rose-50 text-rose-800',
+                    : msg.type === 'warning'
+                      ? 'border-amber-200 bg-amber-50 text-amber-800'
+                      : 'border-rose-200 bg-rose-50 text-rose-800',
                 ].join(' ')}
               >
                 {msg.text}
               </div>
+            )}
+
+            {showResendBtn && (
+              <button
+                type="button"
+                onClick={handleResendEmail}
+                disabled={resendingEmail}
+                className="w-full rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resendingEmail ? 'Reenviando...' : '📧 Reenviar email de verificación'}
+              </button>
             )}
 
             <div>
@@ -134,7 +188,17 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">Contraseña</label>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-sm font-semibold text-gray-700">Contraseña</label>
+                {mode === 'login' && (
+                  <a
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </a>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
@@ -157,7 +221,8 @@ export default function Login() {
 
               {mode === 'register' && (
                 <p className="mt-2 text-xs text-gray-500">
-                  Al registrarte se crea automáticamente tu acceso de <b>30 días</b>.
+                  Al registrarte recibirás un email de verificación. Tu trial de <b>30 días</b>{' '}
+                  empezará al verificar.
                 </p>
               )}
             </div>
@@ -187,7 +252,9 @@ export default function Login() {
             </button>
 
             <div className="pt-2 text-center text-xs text-gray-500">
-              Consejo: usa un email real para no perder el acceso.
+              {mode === 'register'
+                ? 'Usa un email real para recibir el enlace de verificación.'
+                : 'Asegúrate de haber verificado tu email.'}
             </div>
           </div>
         </div>

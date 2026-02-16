@@ -121,6 +121,73 @@ class ApiClient {
   isAuthenticated(): boolean {
     return !!this.token;
   }
+
+  // Verificar email
+  async verifyEmail(token: string) {
+    const response = await fetch(`${API_URL}/auth/verify-email`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ token }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al verificar email');
+    }
+
+    const data = await response.json();
+    this.token = data.token;
+    localStorage.setItem('auth_token', data.token);
+    return data;
+  }
+
+  // Solicitar recuperación de contraseña
+  async forgotPassword(email: string) {
+    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al solicitar recuperación');
+    }
+
+    return await response.json();
+  }
+
+  // Restablecer contraseña
+  async resetPassword(token: string, newPassword: string) {
+    const response = await fetch(`${API_URL}/auth/reset-password`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al restablecer contraseña');
+    }
+
+    return await response.json();
+  }
+
+  // Reenviar email de verificación
+  async resendVerification(email: string) {
+    const response = await fetch(`${API_URL}/auth/resend-verification`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error al reenviar verificación');
+    }
+
+    return await response.json();
+  }
 }
 
 export const apiClient = new ApiClient();
